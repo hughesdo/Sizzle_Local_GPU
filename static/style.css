@@ -1,0 +1,349 @@
+:root{
+  --bg:#0a0b0f;
+  --panel:#12141c;
+  --panel-2:#171a24;
+  --ink:#d7dbe6;
+  --dim:#6b7180;
+  --line:#242835;
+  --hot:#ff5d3b;        /* sizzle orange */
+  --hot-2:#ffb03a;      /* amber */
+  --live:#3bffd0;       /* reactive cyan */
+  --grid:#1b1e28;
+  --mono:"DejaVu Sans Mono","SFMono-Regular",Menlo,Consolas,monospace;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--mono)}
+body{
+  min-height:100vh;
+  background-image:
+    linear-gradient(var(--grid) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:40px 40px;background-position:center;
+}
+
+#scanline{
+  position:fixed;inset:0;pointer-events:none;z-index:2;
+  background:linear-gradient(rgba(59,255,208,0.03),transparent 3px);
+  background-size:100% 4px;animation:scan 8s linear infinite;opacity:.5;
+}
+@keyframes scan{from{background-position:0 0}to{background-position:0 100vh}}
+
+header{
+  position:sticky;top:0;z-index:30;
+  display:flex;justify-content:space-between;align-items:center;
+  padding:14px 22px;background:rgba(10,11,15,.85);backdrop-filter:blur(6px);
+  border-bottom:1px solid var(--line);
+}
+.brand{display:flex;flex-direction:column;gap:2px}
+.logo{font-weight:700;letter-spacing:.32em;font-size:20px;color:var(--hot);text-shadow:0 0 14px rgba(255,93,59,.5)}
+.sub{font-size:11px;color:var(--dim);letter-spacing:.14em}
+.badges{display:flex;gap:10px;align-items:center}
+.badge{font-size:11px;padding:4px 9px;border:1px solid var(--line);border-radius:2px;color:var(--dim);letter-spacing:.06em;white-space:nowrap}
+.badge.ok{color:var(--live);border-color:var(--live)}
+.badge.bad{color:var(--hot);border-color:var(--hot)}
+.badge.warn{color:var(--hot-2);border-color:var(--hot-2)}
+#variant{background:var(--panel);color:var(--ink);border:1px solid var(--line);font-family:var(--mono);font-size:12px;padding:5px 8px;border-radius:2px}
+
+main{max-width:1320px;margin:0 auto;padding:28px 22px 90px;position:relative;z-index:1}
+.step{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:20px;margin-bottom:22px;position:relative}
+.step-head{font-size:13px;letter-spacing:.2em;color:var(--ink);margin-bottom:16px;text-transform:uppercase}
+.step-head .n{color:var(--hot);margin-right:10px;font-weight:700}
+.head-hint{display:block;margin-top:6px;font-size:10.5px;letter-spacing:.04em;color:var(--dim);text-transform:none}
+.hidden{display:none!important}
+
+/* locked step veil */
+.step.locked{opacity:.62}
+.lock-veil{
+  position:absolute;inset:0;z-index:12;border-radius:4px;display:none;
+  align-items:center;justify-content:center;
+  background:repeating-linear-gradient(45deg,rgba(10,11,15,.72),rgba(10,11,15,.72) 12px,rgba(20,16,12,.72) 12px,rgba(20,16,12,.72) 24px);
+  cursor:not-allowed;
+}
+.step.locked .lock-veil{display:flex}
+.lock-veil span{font-size:12px;letter-spacing:.14em;color:var(--hot-2);border:1px solid var(--hot-2);padding:8px 16px;border-radius:3px;background:rgba(10,11,15,.85)}
+
+/* drop zones */
+.drop{display:flex;align-items:center;justify-content:center;height:120px;border:1.5px dashed var(--line);border-radius:4px;cursor:pointer;transition:.15s;background:var(--panel-2)}
+.drop:hover,.drop.hover{border-color:var(--hot);background:#1a1410}
+.drop-label{color:var(--dim);font-size:13px;letter-spacing:.06em}
+.seg-controls{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:12px;color:var(--dim)}
+.meta{color:var(--dim);font-size:11px;letter-spacing:.04em}
+
+/* image tray */
+.tray-wrap{margin-bottom:16px}
+.tray{display:flex;gap:10px;align-items:stretch;padding:12px;background:var(--panel-2);border:1px solid var(--line);border-radius:4px;min-height:104px}
+.tray-scroll{display:flex;gap:10px;overflow-x:auto;flex:1;align-items:center;padding-bottom:2px}
+.tray-img{position:relative;width:80px;height:80px;flex:0 0 auto}
+.tray-img img{width:80px;height:80px;object-fit:cover;border:1px solid var(--line);border-radius:3px;cursor:grab;transition:.12s;display:block}
+.tray-img img:hover{border-color:var(--hot);transform:translateY(-2px)}
+.tray-img.dragging img{opacity:.4}
+.tray-img .pstatus{position:absolute;left:4px;bottom:4px;font-size:9px;padding:1px 5px;border-radius:2px;letter-spacing:.04em;background:rgba(10,11,15,.8)}
+.pstatus.thinking{color:var(--hot-2);border:1px solid var(--hot-2)}
+.pstatus.ready{color:var(--live);border:1px solid var(--live)}
+.pstatus.off{color:var(--dim);border:1px solid var(--line)}
+.pstatus.warn{color:#e0a020;border:1px solid #e0a020}
+.tray-add{width:80px;height:80px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;text-align:center;border:1.5px dashed var(--line);border-radius:3px;color:var(--dim);font-size:11px;line-height:1.3;cursor:pointer;background:var(--panel)}
+.tray-add:hover{border-color:var(--hot);color:var(--hot)}
+.tray-continue{width:80px;height:80px;flex:0 0 auto;display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;border:1.5px dashed var(--live);border-radius:3px;color:var(--live);cursor:grab;background:rgba(59,255,208,.05)}
+.tray-continue:hover{background:rgba(59,255,208,.12);box-shadow:0 0 12px rgba(59,255,208,.2)}
+.tray-continue.dragging{opacity:.4}
+.cont-icon{font-size:26px;line-height:1}
+.cont-label{font-size:10px;letter-spacing:.08em}
+
+/* timeline toolbar */
+.tl-toolbar{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.tl-zoomlabel{font-size:10px;letter-spacing:.12em;color:var(--dim);text-transform:uppercase}
+#zoom{width:280px;accent-color:var(--hot)}
+.tl-btn{background:var(--panel-2);border:1px solid var(--line);color:var(--dim);font-family:var(--mono);font-size:11px;padding:6px 12px;border-radius:2px;cursor:pointer;letter-spacing:.06em}
+.tl-btn:hover{border-color:var(--hot);color:var(--ink)}
+.tl-btn.primary{background:var(--hot);color:#0a0b0f;border-color:var(--hot);font-weight:700}
+.tl-btn.primary:hover{box-shadow:0 0 16px rgba(255,93,59,.5)}
+.tl-btn.danger{color:var(--hot);border-color:var(--line)}
+.tl-btn.danger:hover{border-color:var(--hot)}
+.tl-meta{margin-left:auto;font-size:11px;color:var(--dim)}
+/* transport */
+.tl-play{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;
+  background:var(--hot);border:none;color:#0a0b0f;cursor:pointer;flex:0 0 auto;transition:box-shadow .15s,transform .05s}
+.tl-play:hover{box-shadow:0 0 16px rgba(255,93,59,.55)}
+.tl-play:active{transform:scale(.94)}
+.tl-play .ph-icon{font-size:13px;line-height:1;transform:translateX(1px)}   /* nudge play triangle optically centered */
+.tl-play.playing .ph-icon{transform:none}
+.tl-play:disabled{background:var(--panel-2);color:var(--dim);cursor:not-allowed;box-shadow:none}
+.tl-time{font-family:var(--mono);font-size:11px;color:var(--ink);letter-spacing:.03em;min-width:104px}
+.tl-time .cur{color:var(--hot)}
+
+/* timeline surface */
+.timeline-scroll{position:relative;border:1px solid var(--line);border-radius:4px;overflow-x:auto;overflow-y:hidden;background:#08090d}
+.timeline-inner{position:relative;min-width:100%}
+.tl-ruler{position:relative;height:22px;border-bottom:1px solid var(--line);background:#0b0c11}
+.tl-ruler .rlabel{position:absolute;top:3px;font-size:9.5px;color:var(--dim);transform:translateX(2px);pointer-events:none;letter-spacing:.03em}
+#waveform{display:block;width:100%;background:#08090d}
+.tl-ticks{position:absolute;left:0;right:0;top:22px;bottom:118px;pointer-events:none;z-index:1}
+.tick{position:absolute;top:0;bottom:0;width:1px;background:rgba(107,113,128,.28)}
+.tick.down{background:rgba(59,255,208,.34);width:1.5px}
+
+/* track holds the blocks */
+.tl-track{position:relative;height:118px;background:linear-gradient(180deg,rgba(255,255,255,.015),transparent);border-top:1px dashed var(--line)}
+.tl-playhead{position:absolute;top:22px;bottom:0;width:2px;background:var(--hot);box-shadow:0 0 8px var(--hot);z-index:12;pointer-events:none;display:none}
+/* grabbable grip sits at the top of the playhead (over the ruler). It's the
+   only pointer-interactive part of the playhead — drag it to reset where the
+   preview starts playing. Grows on hover so it's easy to catch. */
+.tl-playhead-grip{position:absolute;top:-22px;left:50%;transform:translateX(-50%);
+  width:13px;height:16px;background:var(--hot);border-radius:3px 3px 1px 1px;
+  cursor:grab;pointer-events:auto;box-shadow:0 0 8px var(--hot);
+  transition:transform .1s,box-shadow .1s}
+.tl-playhead-grip::before{content:"";position:absolute;left:0;right:0;bottom:-6px;
+  margin:0 auto;width:0;height:0;border-left:6px solid transparent;
+  border-right:6px solid transparent;border-top:6px solid var(--hot)}
+.tl-playhead-grip::after{content:"";position:absolute;top:4px;left:50%;
+  transform:translateX(-50%);width:3px;height:7px;
+  border-left:1px solid rgba(0,0,0,.45);border-right:1px solid rgba(0,0,0,.45)}
+.tl-playhead-grip:hover{transform:translateX(-50%) scale(1.18);box-shadow:0 0 12px var(--hot)}
+.tl-playhead.dragging{width:2px}
+.tl-playhead.dragging .tl-playhead-grip{cursor:grabbing;transform:translateX(-50%) scale(1.18)}
+
+/* a block on the timeline */
+.block{position:absolute;top:8px;height:102px;border-radius:4px;overflow:hidden;cursor:grab;
+  border:1px solid var(--live);background:#111;box-shadow:0 3px 10px rgba(0,0,0,.5);z-index:5;
+  background-size:cover;background-position:center;user-select:none;transition:box-shadow .12s}
+.block:hover{box-shadow:0 0 0 1px var(--hot),0 4px 14px rgba(0,0,0,.6)}
+.block.dragging{cursor:grabbing;z-index:20;box-shadow:0 0 0 2px var(--hot),0 8px 22px rgba(0,0,0,.7)}
+.block.selected{box-shadow:0 0 0 2px var(--hot-2),0 4px 14px rgba(0,0,0,.6)}
+/* the block the playhead is currently over ("now playing") — thin reactive-cyan
+   ring + glow, distinct from amber selection and orange hover. */
+.block.playing{box-shadow:0 0 0 1.5px var(--live),0 0 16px rgba(59,255,208,.5),0 4px 14px rgba(0,0,0,.6)}
+.block.playing::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:var(--live);z-index:8;pointer-events:none}
+/* translucent tiled preview of the dropped image. Sits BELOW .b-veil so the
+   render shimmer (drawn on the veil) always animates on top of it, and is inset
+   top/bottom so the time/duration + caption text keep a clear dark strip.
+   Tiles are sized to the band height (smaller than the block) and repeat across
+   the stretched width. Jumps to full opacity once the clip has rendered. */
+.block .b-img{position:absolute;top:18px;bottom:18px;left:0;right:0;
+  background-image:var(--bimg);background-repeat:repeat-x;background-size:auto 100%;
+  background-position:center;opacity:.75;pointer-events:none}
+.block.r-done .b-img{opacity:1}
+/* idle veil is transparent so the tiled .b-img below shows through — the text
+   now sits on clear #111 strips, so no darkening is needed here. During render
+   this same veil's background is overridden with the green shimmer bars. */
+.block .b-veil{position:absolute;inset:0;background:transparent}
+.block .b-top{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;padding:4px 6px;font-size:9.5px;color:var(--live);letter-spacing:.03em;text-shadow:0 1px 3px #000}
+.block .b-bottom{position:absolute;bottom:0;left:0;right:0;padding:4px 6px;font-size:9.5px;color:var(--ink);text-shadow:0 1px 3px #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.block .b-hint{position:absolute;top:50%;left:0;right:0;transform:translateY(-50%);text-align:center;font-size:10px;color:rgba(255,255,255,.55);pointer-events:none}
+.block .b-resize{position:absolute;top:0;right:0;width:12px;height:100%;cursor:ew-resize;z-index:6;background:linear-gradient(90deg,transparent,rgba(255,93,59,.35))}
+.block .b-resize:hover{background:linear-gradient(90deg,transparent,rgba(255,93,59,.7))}
+.block.overcap{border-color:var(--hot)}
+.block.overcap .b-top{color:var(--hot)}
+
+/* continue block styling */
+.block.kind-continue{border-style:dashed;border-color:var(--live);
+  background:repeating-linear-gradient(45deg,rgba(59,255,208,.07),rgba(59,255,208,.07) 10px,rgba(59,255,208,.02) 10px,rgba(59,255,208,.02) 20px)}
+.block.kind-continue .b-hint{color:var(--live);font-size:22px}
+.block.kind-continue .b-sub{position:absolute;top:calc(50% + 16px);left:0;right:0;text-align:center;font-size:9px;color:var(--live);letter-spacing:.08em}
+
+/* drop hover state on the track */
+.tl-track.drop-hover{box-shadow:inset 0 0 0 2px var(--hot)}
+.drop-ghost{position:absolute;top:8px;height:102px;border:1.5px dashed var(--hot);border-radius:4px;background:rgba(255,93,59,.08);pointer-events:none;z-index:4}
+
+.tl-help{margin-top:10px;font-size:10.5px;color:var(--dim);letter-spacing:.03em}
+
+/* generate */
+.gen-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+#generate{background:var(--hot);color:#0a0b0f;border:none;font-family:var(--mono);font-weight:700;letter-spacing:.18em;font-size:14px;padding:14px 34px;border-radius:3px;cursor:pointer;transition:.15s}
+#generate:hover:not(:disabled){box-shadow:0 0 22px rgba(255,93,59,.5)}
+#generate:disabled{background:var(--line);color:var(--dim);cursor:not-allowed}
+.seed{font-size:12px;color:var(--dim)}
+.seed input{width:110px;background:#08090d;color:var(--ink);border:1px solid var(--line);font-family:var(--mono);font-size:12px;padding:6px 8px;border-radius:2px;margin-left:6px}
+.fill-note{font-size:11px;color:var(--hot-2);letter-spacing:.04em}
+
+/* progress */
+.progress{margin-top:20px}
+.progress-bar{height:6px;background:var(--panel-2);border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;width:0;background:linear-gradient(90deg,var(--hot),var(--hot-2));transition:width .3s}
+.progress-log{margin-top:10px;font-size:11px;color:var(--dim);max-height:170px;overflow:auto;line-height:1.6;white-space:pre-wrap}
+.progress-log .live{color:var(--live)}
+.progress-log .err{color:var(--hot)}
+.progress-log .warn{color:#e0a020}
+.progress-log .clip-link{color:var(--live);text-decoration:underline;cursor:pointer}
+.progress-log .clip-link:hover{color:#fff}
+
+/* result */
+.result{margin-top:20px;display:flex;flex-direction:column;gap:14px;align-items:flex-start}
+#result-video{max-width:100%;max-height:560px;border:1px solid var(--line);border-radius:4px;background:#000}
+.download-btn{background:var(--live);color:#0a0b0f;text-decoration:none;font-weight:700;letter-spacing:.16em;font-size:13px;padding:12px 28px;border-radius:3px}
+.download-btn:hover{box-shadow:0 0 22px rgba(59,255,208,.45)}
+
+/* modal */
+.modal-backdrop{position:fixed;inset:0;z-index:50;background:rgba(6,7,10,.78);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center}
+.modal{width:min(760px,92vw);background:var(--panel);border:1px solid var(--line);border-radius:6px;box-shadow:0 20px 60px rgba(0,0,0,.6);overflow:hidden}
+.modal-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--hot)}
+.modal-x{background:none;border:none;color:var(--dim);font-size:16px;cursor:pointer}
+.modal-x:hover{color:var(--hot)}
+.modal-body{display:flex;gap:16px;padding:18px}
+#modal-img{width:190px;height:320px;max-height:44vh;object-fit:cover;border:1px solid var(--line);border-radius:4px;background:#000;flex:0 0 auto}
+.modal-right{flex:1;display:flex;flex-direction:column;gap:10px;min-width:0}
+.modal-sub{font-size:11px;color:var(--dim);letter-spacing:.04em}
+#modal-prompt{flex:1;min-height:220px;resize:vertical;background:#08090d;color:var(--ink);border:1px solid var(--line);border-radius:3px;font-family:var(--mono);font-size:13px;line-height:1.5;padding:12px}
+#modal-prompt:focus{outline:none;border-color:var(--hot)}
+.modal-actions{display:flex;align-items:center;gap:10px}
+.modal-spacer{flex:1}
+#modal-resuggest.thinking{opacity:.6;cursor:wait}
+
+/* Gap warning modal (shown on GENERATE when clips aren't butted together). */
+.gap-modal{width:min(460px,92vw)}
+.gap-body{flex-direction:column;gap:18px}
+.gap-msg{font-size:13px;line-height:1.6;color:var(--ink)}
+.gap-msg b{color:var(--hot-2)}
+/* Clips flanking a gap, highlighted after "return to timeline". */
+.block.gap-warn{border-color:var(--hot-2)!important;
+  box-shadow:0 0 0 2px var(--hot-2),0 0 18px rgba(255,176,58,.55);
+  animation:gap-pulse 1s ease-in-out infinite}
+@keyframes gap-pulse{0%,100%{box-shadow:0 0 0 2px var(--hot-2),0 0 8px rgba(255,176,58,.35)}
+  50%{box-shadow:0 0 0 2px var(--hot-2),0 0 22px rgba(255,176,58,.7)}}
+
+/* ===========================================================================
+   Render session: button state, per-block render animation, timeline hard-lock,
+   download links, toasts, risk badges. (IMPROVEMENT-PLAN.md Phases A–E)
+   =========================================================================== */
+
+/* GENERATE while a render is in flight — ghosted but visibly "working", not just
+   the flat disabled grey, so it reads as busy rather than broken. */
+#generate.rendering{background:var(--panel-2);color:var(--live);border:1px solid var(--live);
+  cursor:progress;animation:gen-pulse 1.4s ease-in-out infinite}
+@keyframes gen-pulse{0%,100%{box-shadow:0 0 0 rgba(59,255,208,0)}50%{box-shadow:0 0 18px rgba(59,255,208,.4)}}
+
+/* Timeline hard-lock veil during an active render (decision 6). Blocks stay
+   visible for the render animation but the whole track is un-editable. */
+body.rendering #step-timeline .tl-track,
+body.rendering #step-timeline .tray,
+body.rendering #step-timeline .tl-toolbar{pointer-events:none}
+body.rendering #timeline-scroll::after{
+  content:"rendering — timeline locked";
+  position:absolute;top:6px;right:10px;z-index:12;
+  font-size:9.5px;letter-spacing:.1em;color:var(--live);
+  background:rgba(10,11,15,.82);border:1px solid var(--live);padding:3px 8px;border-radius:2px}
+body.rendering #timeline-scroll{position:relative}
+body.rendering #step-timeline .tl-track::before{
+  content:"";position:absolute;inset:0;z-index:7;pointer-events:none;
+  background:repeating-linear-gradient(45deg,rgba(59,255,208,.05),rgba(59,255,208,.05) 12px,transparent 12px,transparent 24px)}
+
+/* --- per-block render states (Phase B) --- */
+.block.r-queued{filter:saturate(.5) brightness(.8)}
+.block.r-queued::after{content:"";position:absolute;top:0;left:0;right:0;height:2px;
+  background:repeating-linear-gradient(90deg,var(--dim),var(--dim) 4px,transparent 4px,transparent 8px);z-index:8}
+
+/* the "blocky" active-render animation: a stepped digital shimmer sweeping the
+   block plus a soft reactive-cyan pulse. Indeterminate on purpose (fal gives no
+   intra-clip progress). Runs on the veil so it sits above the image. */
+.block.r-rendering{border-color:var(--live);box-shadow:0 0 0 1.5px var(--live),0 0 18px rgba(59,255,208,.45)}
+.block.r-rendering .b-veil{
+  background:linear-gradient(90deg,rgba(59,255,208,.28) 0 25%,rgba(0,0,0,.5) 25% 50%,rgba(59,255,208,.28) 50% 75%,rgba(0,0,0,.5) 75% 100%);
+  background-size:32px 100%;
+  animation:block-shimmer .7s steps(4) infinite, block-glow 1.3s ease-in-out infinite}
+.block.kind-continue.r-rendering{background:#111}
+@keyframes block-shimmer{from{background-position:0 0}to{background-position:32px 0}}
+@keyframes block-glow{0%,100%{opacity:.75}50%{opacity:1}}
+
+.block.r-done{border-color:var(--live)}
+.block.r-done::after{content:"✓";position:absolute;top:3px;right:5px;z-index:9;
+  font-size:12px;color:#0a0b0f;background:var(--live);width:16px;height:16px;line-height:16px;
+  text-align:center;border-radius:2px;box-shadow:0 1px 4px rgba(0,0,0,.6)}
+
+.block.r-substituted,.block.r-filled{border-color:var(--hot-2)}
+.block.r-substituted::after{content:"⇄";position:absolute;top:3px;right:5px;z-index:9;
+  font-size:11px;color:#0a0b0f;background:var(--hot-2);width:16px;height:16px;line-height:16px;
+  text-align:center;border-radius:2px;box-shadow:0 1px 4px rgba(0,0,0,.6);cursor:help}
+.block.r-filled{background:repeating-linear-gradient(45deg,#15161c,#15161c 8px,#0d0e12 8px,#0d0e12 16px)}
+.block.r-filled::after{content:"▢";position:absolute;top:3px;right:5px;z-index:9;
+  font-size:11px;color:#0a0b0f;background:var(--hot-2);width:16px;height:16px;line-height:16px;
+  text-align:center;border-radius:2px}
+
+.block.r-retry{animation:block-shake .18s ease-in-out 2}
+@keyframes block-shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+
+/* --- download link (Phase C) --- */
+.progress-log .clip-link{color:var(--live);text-decoration:none;cursor:pointer;
+  border-bottom:1px dotted var(--live)}
+.progress-log .clip-link:hover{color:#fff;border-bottom-color:#fff}
+
+/* --- toasts (Phase D Tier 2) --- */
+#toast-host{position:fixed;right:18px;bottom:18px;z-index:80;display:flex;flex-direction:column;
+  gap:10px;max-width:min(380px,90vw);pointer-events:none}
+.toast{pointer-events:auto;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--live);
+  border-radius:4px;padding:11px 14px;font-size:11.5px;line-height:1.5;color:var(--ink);
+  box-shadow:0 10px 30px rgba(0,0,0,.5);opacity:0;transform:translateY(10px);transition:.28s}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.warn{border-left-color:var(--hot-2)}
+.toast.err{border-left-color:var(--hot)}
+
+/* --- content-policy risk badge on tray thumbs (Phase D Tier 3) --- */
+.tray-img .risk{position:absolute;right:4px;top:4px;font-size:11px;line-height:1;
+  padding:2px 3px;border-radius:2px;background:rgba(10,11,15,.82);border:1px solid var(--hot-2);
+  color:var(--hot-2);cursor:help}
+.tray-img .risk.likely{border-color:var(--hot);color:var(--hot)}
+
+/* risk marker on a placed block (top-left of the label bar) */
+.block .b-risk{color:var(--hot-2);margin-right:4px;text-shadow:0 1px 3px #000;cursor:help}
+.block.risky .b-risk{color:var(--hot-2)}
+.block.risky{border-color:var(--hot-2)}
+
+/* aspect-mismatch badge on a tray thumb (Phase E6) */
+.tray-img .ar-badge{position:absolute;left:4px;top:4px;font-size:11px;line-height:1;
+  padding:2px 4px;border-radius:2px;background:rgba(10,11,15,.82);border:1px solid var(--hot-2);
+  color:var(--hot-2);cursor:help}
+
+/* format / resolution picker in the header (Phase E) */
+.fmt-wrap{display:flex;align-items:center;gap:6px}
+#format{background:var(--panel);color:var(--ink);border:1px solid var(--line);
+  font-family:var(--mono);font-size:12px;padding:5px 8px;border-radius:2px;max-width:280px}
+#format:disabled,#variant:disabled{opacity:.5;cursor:not-allowed}
+.fmt-custom{display:flex;align-items:center;gap:3px}
+.fmt-custom input{width:58px;background:#08090d;color:var(--ink);border:1px solid var(--line);
+  font-family:var(--mono);font-size:12px;padding:4px 5px;border-radius:2px}
+.fmt-custom .fmt-x{color:var(--dim);font-size:11px}
+.fmt-cost{font-size:10.5px;color:var(--live);letter-spacing:.03em;white-space:nowrap}
+
+/* content-policy heads-up copy in the tray (Phase D Tier 1) */
+.tray-note{font-size:10px;color:var(--dim);letter-spacing:.02em;line-height:1.5;
+  margin:8px 2px 0;max-width:640px}
+.tray-note b{color:var(--hot-2);font-weight:600}

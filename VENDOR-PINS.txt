@@ -1,0 +1,53 @@
+Sizzle (local-GPU edition) - vendored upstream pins
+===================================================
+
+The two git checkouts this project sits next to are gitignored (they belong to
+other repos). These are the exact commits the build in this backup was
+developed and validated against.
+
+install.bat / install.sh clone them at HEAD, which is normally what you want.
+If HEAD has drifted and something breaks on the new box, check out these SHAs
+instead and you are back to a known-good state.
+
+
+LTX-2  (REQUIRED - this is the inference engine)
+------------------------------------------------
+repo    https://github.com/Lightricks/LTX-2.git
+commit  400fd31054597515f47125691032c04b1c3ee24e
+date    2026-08-16T11:58:17+03:00
+path    ./LTX-2
+
+    git clone https://github.com/Lightricks/LTX-2.git LTX-2
+    git -C LTX-2 checkout 400fd31054597515f47125691032c04b1c3ee24e
+
+Only two of its four packages are installed (editable):
+    LTX-2/packages/ltx-core        model loading, VAEs, Gemma assets, quantization
+    LTX-2/packages/ltx-pipelines   A2VidPipelineTwoStage - what backend/ltx_engine.py drives
+Not installed: ltx-kernels (optional fused CUDA kernels, builds from source and
+is not required), ltx-trainer (training only).
+
+backend/ltx_engine.py imports from these, so an API change upstream is the most
+likely cause of a "worked last month, broken today" rebuild. Pin first, debug
+second.
+
+
+Sizzle_upstream  (OPTIONAL - reference only)
+--------------------------------------------
+repo    https://github.com/hughesdo/Sizzle.git
+commit  e5010af4020dbe242a54b7f282d7ddd284a82def
+date    2026-08-24T18:17:35-04:00
+path    ./Sizzle_upstream
+
+    git clone https://github.com/hughesdo/Sizzle.git Sizzle_upstream
+    git -C Sizzle_upstream checkout e5010af4020dbe242a54b7f282d7ddd284a82def
+
+The original hosted-render Sizzle (fal.ai + Cloudinary). Kept side-by-side only
+so the two trees can be diffed - README.md's "Fidelity to upstream" section is
+the write-up of that comparison. Nothing in this build imports from it, and you
+do not need it to run or rebuild anything.
+
+
+Model weights
+-------------
+Weights are versioned by Hugging Face repo, not by these pins. See
+models/README.md for the exact repo ids and filenames.

@@ -1,0 +1,43 @@
+# Sizzle (local-GPU edition) - application dependencies.
+#
+# NOTE what is NOT in here:
+#   torch / torchaudio  -> installed separately from the CUDA wheel index, because
+#                          PyPI's default torch is CPU-only and would silently give
+#                          you a machine that cannot render. install.bat runs:
+#                            uv pip install --index-url \
+#                              https://download.pytorch.org/whl/cu132 torch==2.13.0+cu132
+#                            uv pip install --index-url \
+#                              https://download.pytorch.org/whl/test/cu132/ torchaudio
+#                          cu132 wheels cover Blackwell (sm_120) and older cards.
+#   ltx-core / ltx-pipelines -> installed editable from the LTX-2 checkout:
+#                            uv pip install -e LTX-2/packages/ltx-core \
+#                                           -e LTX-2/packages/ltx-pipelines
+#                          They pull transformers, safetensors, accelerate, av,
+#                          openimageio and friends themselves.
+#   ffmpeg              -> a system install on PATH, ideally an NVENC-enabled build.
+#
+# There is no fal-client and no cloudinary any more: this build makes no render
+# API calls and hosts no media anywhere.
+
+# Web backend
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9
+websockets>=12.0
+
+# Audio analysis (beat detection, waveform, per-segment slicing)
+librosa>=0.10.2
+soundfile>=0.12.1
+numpy>=1.26
+
+# Image handling
+Pillow>=10.3
+
+# Optional auto-prompt: the ONLY outbound API this app can call. Without an
+# ANTHROPIC_API_KEY the app still runs and falls back to a generic prompt.
+anthropic>=0.40
+httpx
+
+# Model downloads (scripts/download_models.py). hf_xet is the fast transfer
+# backend - it matters a lot when you are pulling 46 GB checkpoints.
+huggingface_hub[hf_xet]>=0.34

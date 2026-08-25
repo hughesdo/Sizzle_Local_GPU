@@ -1,0 +1,89 @@
+# ===========================================================================
+#  Sizzle (local-GPU edition) - what does and does not go into the backup repo.
+#
+#  Guiding rule: commit everything needed to REBUILD this project on a
+#  different GPU box. Exclude only (a) things that are enormous and
+#  re-downloadable, (b) things that are clones of other repos, (c) things that
+#  are specific to one machine, and (d) runtime scratch.
+#
+#  Every exclusion below has a documented way to recreate it. See SETUP.md.
+# ===========================================================================
+
+# --- Python ---------------------------------------------------------------
+# Rebuilt by install.bat / install.sh. requirements.txt + requirements.lock.txt
+# are committed, so the environment is reproducible without the venv itself.
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# --- Local model weights (~123 GB) ----------------------------------------
+# THE big one. Six safetensors files plus the Gemma 3 12B text encoder.
+# Re-fetch with: python scripts/download_models.py
+# Full instructions (including the gated Gemma repo): models/README.md
+# (git will not descend into an excluded DIRECTORY, so exclude the CONTENTS
+# with models/* - with "models/" the negation below would never fire.)
+models/*
+!models/README.md
+
+# --- Vendored upstream checkouts ------------------------------------------
+# Both of these are git clones of OTHER repositories. Committing them would
+# nest a repo inside this one, and neither is ours to redistribute.
+#
+#   LTX-2/          Lightricks' inference pipelines. install.bat/.sh clones it.
+#                   Exact commit this build was validated against is pinned in
+#                   VENDOR-PINS.txt - use it if HEAD ever breaks.
+#   Sizzle_upstream/  Read-only reference copy of the original hosted-render
+#                   Sizzle (github.com/hughesdo/Sizzle), kept side-by-side to
+#                   diff against. Not needed to run anything.
+LTX-2/
+Sizzle_upstream/
+
+# --- Machine-local TLS bundle ---------------------------------------------
+# certs/ca-bundle.pem embeds this box's antivirus MITM root. It is not a secret
+# (no private keys) but it is machine-specific and WRONG on any other host.
+# The app falls back to certifi when it is absent. Regenerate on the new box
+# only if you actually hit CERTIFICATE_VERIFY_FAILED: scripts/fix-certs.ps1
+certs/ca-bundle.pem
+
+# --- Runtime artifacts (uploads, clips, renders, logs, usage ledger) ------
+# Recreated on demand; config.ensure_dirs() makes the tree at startup.
+_work/*
+!_work/README.md
+*.log
+*.log.*
+
+# --- Secrets --------------------------------------------------------------
+# NOTE: `.env` IS COMMITTED in this backup, deliberately - it carries the
+# render settings this build was tuned with and records that the Gemma license
+# was accepted. It was audited before the first commit and contains NO
+# credentials (its only active line is SIZZLE_BACKEND=local).
+#
+# ==> Put anything secret in `.env.local` instead, which stays ignored. <==
+#     backend/config.py reads .env; to point it elsewhere set SIZZLE_ENV_FILE.
+#     Real keys to keep OUT of .env: ANTHROPIC_API_KEY, HF_TOKEN.
+.env.local
+.env.*.local
+*.pem
+*.key
+!certs/*.md
+
+# --- Personal working notes / planning docs (kept local, not published) ---
+notes.txt
+PLAN.md
+BUILD-TRACKER.md
+IMPROVEMENT-PLAN.md
+yolo.bat
+
+# --- Working screenshots dropped in the repo root --------------------------
+/*.png
+
+# --- Editor / OS junk ------------------------------------------------------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

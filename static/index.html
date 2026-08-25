@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIZZLE // audio-reactive timeline</title>
+<link rel="stylesheet" href="/style.css?v=5">
+</head>
+<body>
+<div id="scanline"></div>
+
+<header>
+  <div class="brand">
+    <span class="logo">SIZZLE</span>
+    <span class="sub">audio-reactive timeline // LTX-2.3</span>
+  </div>
+  <div class="badges">
+    <span class="badge" id="badge-render">render: ?</span>
+    <span class="badge" id="badge-prompt">auto-prompt: ?</span>
+    <span class="badge" id="badge-ffmpeg">ffmpeg: ?</span>
+    <select id="variant" title="model variant"></select>
+    <span class="fmt-wrap">
+      <select id="format" title="output format / resolution"></select>
+      <span class="fmt-custom hidden" id="fmt-custom">
+        <input type="number" id="fmt-w" min="256" max="1920" step="64" placeholder="W">
+        <span class="fmt-x">×</span>
+        <input type="number" id="fmt-h" min="256" max="1920" step="64" placeholder="H">
+      </span>
+      <span class="fmt-cost" id="fmt-cost" title="frame size — local renders cost time, and time scales with pixels (sizes snap to a 64px grid)"></span>
+    </span>
+  </div>
+</header>
+
+<main>
+  <!-- STEP 1: music -->
+  <section class="step" id="step-audio">
+    <div class="step-head"><span class="n">01</span> drop your music</div>
+    <label class="drop" id="audio-drop">
+      <input type="file" id="audio-input" accept="audio/*" hidden>
+      <span class="drop-label">drop an audio file or click // wav mp3 flac</span>
+    </label>
+    <div class="seg-controls hidden" id="seg-controls">
+      <span class="meta" id="audio-meta"></span>
+    </div>
+  </section>
+
+  <!-- STEP 2: timeline -->
+  <section class="step locked" id="step-timeline">
+    <div class="lock-veil"><span>load your music first</span></div>
+    <div class="step-head">
+      <span class="n">02</span> build your timeline
+      <span class="head-hint">drag images onto the track · drag an edge to set how long each one plays</span>
+    </div>
+
+    <div class="tray-wrap">
+      <div class="tray" id="tray">
+        <label class="tray-add" id="tray-add" title="add images to the tray">
+          <input type="file" id="image-input" accept="image/*" multiple hidden>
+          <span>+ add<br>images</span>
+        </label>
+        <div class="tray-continue" id="tray-continue" draggable="true"
+             title="Continue: drag onto the track after a clip to extend it from its last frame">
+          <span class="cont-icon">⟳</span><span class="cont-label">continue</span>
+        </div>
+        <div class="tray-scroll" id="tray-scroll"></div>
+      </div>
+      <div class="tray-note" id="tray-note" hidden>Heads up: rendering happens on <b>your own GPU</b>, so
+        nothing here gets rejected by a content filter. A <b>⚠</b> on a thumbnail is just
+        auto-prompt's warning that the shot leans <b>NSFW</b> and may get age-gated or pulled
+        if you post the finished video to YouTube, TikTok or Instagram — swap it if that matters.</div>
+    </div>
+
+    <div class="tl-toolbar">
+      <button class="tl-play" id="tl-play" title="play / pause (space)" aria-label="play">
+        <span class="ph-icon">▶</span>
+      </button>
+      <span class="tl-time" id="tl-time">0:00.0 / 0:00.0</span>
+      <span class="tl-zoomlabel">zoom</span>
+      <input type="range" id="zoom" min="1" max="10" step="0.05" value="2">
+      <button class="tl-btn" id="zoom-fit">fit</button>
+      <span class="tl-meta" id="tl-meta"></span>
+    </div>
+
+    <div class="timeline-scroll" id="timeline-scroll">
+      <div class="timeline-inner" id="timeline-inner">
+        <div class="tl-ruler" id="tl-ruler"></div>
+        <canvas id="waveform" height="120"></canvas>
+        <div class="tl-ticks" id="tl-ticks"></div>
+        <div class="tl-track" id="tl-track"></div>
+        <div class="tl-playhead" id="tl-playhead"><div class="tl-playhead-grip" id="tl-playhead-grip" title="drag to move the play position"></div></div>
+      </div>
+    </div>
+    <audio id="preview-audio" hidden></audio>
+    <div class="tl-help" id="tl-help">tip: click a clip to edit its prompt · drag the right edge to resize · beats are the faint ticks</div>
+  </section>
+
+  <!-- STEP 3: generate -->
+  <section class="step locked" id="step-generate">
+    <div class="lock-veil"><span>place at least one image on the timeline</span></div>
+    <div class="step-head"><span class="n">03</span> generate</div>
+    <div class="gen-row">
+      <button id="generate" disabled>GENERATE</button>
+      <label class="seed">seed <input type="number" id="seed" placeholder="random"></label>
+      <span class="fill-note" id="fill-note"></span>
+    </div>
+    <div class="progress hidden" id="progress">
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="progress-log" id="progress-log"></div>
+    </div>
+    <div class="result hidden" id="result">
+      <video id="result-video" controls></video>
+      <a id="download" class="download-btn" download>DOWNLOAD MP4</a>
+    </div>
+  </section>
+</main>
+
+<!-- PROMPT MODAL -->
+<div class="modal-backdrop hidden" id="modal">
+  <div class="modal">
+    <div class="modal-head">
+      <span id="modal-title">edit prompt</span>
+      <button class="modal-x" id="modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <img id="modal-img" alt="clip first frame">
+      <div class="modal-right">
+        <div class="modal-sub" id="modal-sub"></div>
+        <textarea id="modal-prompt" placeholder="describe how this image should move to the music..."></textarea>
+        <div class="modal-actions">
+          <button class="tl-btn" id="modal-resuggest">⟳ re-suggest (auto-prompt)</button>
+          <div class="modal-spacer"></div>
+          <button class="tl-btn danger" id="modal-remove">remove clip</button>
+          <button class="tl-btn primary" id="modal-save">save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- GAP WARNING MODAL -->
+<div class="modal-backdrop hidden" id="gap-modal">
+  <div class="modal gap-modal">
+    <div class="modal-head"><span>mind the gap</span></div>
+    <div class="modal-body gap-body">
+      <div class="gap-msg" id="gap-msg"></div>
+      <div class="modal-actions">
+        <button class="tl-btn" id="gap-return">← return to timeline</button>
+        <div class="modal-spacer"></div>
+        <button class="tl-btn primary" id="gap-generate">generate anyway</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/app.js?v=8"></script>
+</body>
+</html>

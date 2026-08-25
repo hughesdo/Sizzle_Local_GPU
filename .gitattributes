@@ -1,0 +1,9 @@
+# Normalize line endings. Keep shell scripts LF so they run on Linux/macOS,
+# keep Windows-native scripts CRLF.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+*.png binary
+*.jpg binary
+*.wav binary
+*.mp4 binary
