@@ -162,7 +162,7 @@ VARIANTS = {
         "pipeline": "full",        # scheduled sigmas + real CFG
     },
 }
-DEFAULT_VARIANT = "distilled"
+DEFAULT_VARIANT = "full"
 
 # ----------------------------------------------------------------------------
 # Render backend

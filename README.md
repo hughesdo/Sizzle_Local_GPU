@@ -357,7 +357,8 @@ again once the GPU frees up.
 
 ## Licenses
 
-The app is [MIT](LICENSE) © 2026 Don Hughes. The **model weights are not**: LTX-2.3,
+The app is [CC BY 4.0](LICENSE) © 2026 Don Hughes — use it, fork it, improve it,
+sell it, just give credit. The **model weights are not mine to license**: LTX-2.3,
 the spatial upscaler, the distilled LoRA and the fal audio-reactive LoRA are all
 covered by the [LTX-2 Community License](https://github.com/Lightricks/LTX-2/blob/main/LICENSE.md),
 and Gemma 3 by Google's [Gemma Terms of Use](https://ai.google.dev/gemma/terms).

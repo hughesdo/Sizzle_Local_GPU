@@ -159,5 +159,5 @@ the instance restarts. See SETUP.md § *Hosted / rented GPU boxes*.
 
 The LTX-2.3 weights and the fal LoRA carry their own licences from their
 respective Hugging Face repos, and Gemma carries Google's Gemma Terms of Use.
-This project's MIT LICENSE covers the code in this repo only, **not** the
+This project's CC BY 4.0 LICENSE covers the code in this repo only, **not** the
 weights. Check each model card before doing anything commercial.
