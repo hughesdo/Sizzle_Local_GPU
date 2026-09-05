@@ -1018,10 +1018,19 @@ function scrollBlockIntoView(el){
   scrollEl.scrollLeft = clamp(px - vw*0.4, 0, Math.max(0, innerEl.clientWidth - vw));
 }
 
+// The render itself runs on the backend's worker thread and doesn't care
+// whether anyone is watching — a dropped socket (flaky IP, box briefly
+// unreachable, laptop sleeps) never stops or loses the job. So instead of
+// giving up on the first disconnect, this reconnects with backoff and, while
+// the socket is down, also polls plain HTTP (which tends to get through a
+// blip that stalls a WS upgrade) so the finished download is never lost even
+// if the live reconnect struggles. Only a definitive "the server no longer
+// knows this job" (404 — e.g. the process actually restarted) is fatal.
 function openProgress(jobId,total){
   $("#progress").classList.remove("hidden"); $("#result").classList.add("hidden");
   const log=$("#progress-log"), fill=$("#progress-fill"); log.textContent="";
-  let finished=false;
+  let finished=false, seen=0, reconnectAttempt=0;
+  let ws=null, reconnectTimer=null, pollTimer=null, wobbleShown=false;
   const line=(t,cls="",url=null)=>{
     const d=document.createElement("div");if(cls)d.className=cls;
     d.appendChild(document.createTextNode(t));
@@ -1036,9 +1045,34 @@ function openProgress(jobId,total){
       d.appendChild(a);
     }
     log.appendChild(d);log.scrollTop=log.scrollHeight;};
-  const ws=new WebSocket(`${location.protocol==="https:"?"wss":"ws"}://${location.host}/ws/${jobId}`);
-  ws.onmessage=(ev)=>{
-    const e=JSON.parse(ev.data);
+
+  function stopPolling(){ if(pollTimer){ clearInterval(pollTimer); pollTimer=null; } }
+  function stopReconnect(){ if(reconnectTimer){ clearTimeout(reconnectTimer); reconnectTimer=null; } }
+  function finish(){ finished=true; stopPolling(); stopReconnect(); if(ws) ws.close(); }
+
+  function startPolling(){
+    if(pollTimer) return;
+    pollTimer=setInterval(async ()=>{
+      let st;
+      try{ st=await api(`/api/job/${jobId}`); }
+      catch(e){ return; } // still offline — keep waiting, WS reconnect is racing this too
+      if(st.error){
+        // job unknown to the server — most likely it restarted and the render
+        // is genuinely gone, not just the socket. No amount of polling fixes that.
+        finish(); line("render lost — the server restarted mid-job. try again.","err");
+        setRendering(false); return;
+      }
+      if(st.status==="done" && !finished){
+        finish(); fill.style.width="100%"; line("done.","live"); showResult(st.download);
+        setRendering(false);
+      } else if(st.status==="error" && !finished){
+        finish(); line("ERROR: "+(st.error||"render failed"),"err"); setRendering(false);
+      }
+    }, 3000);
+  }
+
+  function applyEvent(e){
+    seen++;
     switch(e.type){
       case "queued": line(`queued // ${e.position} ahead of you`); break;
       case "start":
@@ -1066,14 +1100,34 @@ function openProgress(jobId,total){
         { const el=blockElForIndex(e.index); if(el&&e.message) el.title=e.message; }
         line(`block ${e.current}/${e.total} :: ${e.message||"filled to keep timing"}`,"warn",e.clip_url); break;
       case "muxing": fill.style.width="95%"; line("muxing audio + concat…","live"); break;
-      case "done": finished=true; fill.style.width="100%"; line("done.","live");
-        showResult(e.download); setRendering(false); ws.close(); break;
-      case "error": finished=true; line("ERROR: "+e.message,"err"); setRendering(false); ws.close(); break;
+      case "done": fill.style.width="100%"; line("done.","live");
+        showResult(e.download); setRendering(false); finish(); break;
+      case "error": line("ERROR: "+e.message,"err"); setRendering(false); finish(); break;
     }
-  };
-  // Un-ghost on any unexpected drop so the user regains control to retry.
-  ws.onclose=()=>{ if(!finished){ line("connection to render lost — you can try again","err"); setRendering(false); } };
-  ws.onerror=()=>{ if(!finished){ setRendering(false); } };
+  }
+
+  function connect(){
+    ws=new WebSocket(`${location.protocol==="https:"?"wss":"ws"}://${location.host}/ws/${jobId}?since=${seen}`);
+    ws.onopen=()=>{
+      reconnectAttempt=0; stopPolling();
+      if(wobbleShown){ line("reconnected.","live"); wobbleShown=false; }
+    };
+    ws.onmessage=(ev)=>applyEvent(JSON.parse(ev.data));
+    ws.onclose=()=>{
+      if(finished) return;
+      // Keep the render ghosted and retry — a dropped socket is not a failed
+      // render. Backoff caps at 10s; the HTTP poll running alongside this is
+      // what actually guarantees the download survives even if reconnecting
+      // the socket itself keeps failing.
+      if(!wobbleShown){ line("connection wobble — reconnecting…","warn"); wobbleShown=true; }
+      startPolling();
+      reconnectAttempt++;
+      const delay=Math.min(1000*Math.pow(2,reconnectAttempt-1),10000);
+      reconnectTimer=setTimeout(connect,delay);
+    };
+    ws.onerror=()=>{ /* onclose always follows and drives the retry */ };
+  }
+  connect();
 }
 function showResult(downloadUrl){
   $("#result").classList.remove("hidden");

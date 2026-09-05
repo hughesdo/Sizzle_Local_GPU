@@ -173,11 +173,16 @@ def _emit(job: Job, event: dict) -> None:
             pass
 
 
-def register_listener(job_id: str, cb: Callable[[dict], None]) -> None:
+def register_listener(job_id: str, cb: Callable[[dict], None], since: int = 0) -> None:
+    """Attach a listener and replay history from event index `since` on. A
+    dropped WS that reconnects passes back how many events it already applied
+    (Don's fix for the flaky-IP disconnects — the job keeps rendering on the
+    worker thread the whole time; only the socket needs to catch back up, and
+    only with what it missed)."""
     _LISTENERS.setdefault(job_id, []).append(cb)
     job = _JOBS.get(job_id)
     if job:
-        for e in job.events:
+        for e in job.events[since:]:
             try:
                 cb(e)
             except Exception:
@@ -237,6 +242,21 @@ def submit(
 
 def get_job(job_id: str) -> Optional[Job]:
     return _JOBS.get(job_id)
+
+
+def snapshot(job: Job) -> dict:
+    """Cheap plain-HTTP status for the polling fallback: when a client's WS
+    can't get an upgrade through mid-blip, a plain GET still usually lands, and
+    this is enough to recover the download link without the live event log."""
+    return {
+        "job_id": job.id,
+        "status": job.status,
+        "current": job.current,
+        "total": job.total,
+        "error": job.error,
+        "download": f"/download/{job.id}" if job.status == "done" else None,
+        "event_count": len(job.events),
+    }
 
 
 # ---------------------------------------------------------------------------

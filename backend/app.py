@@ -384,10 +384,20 @@ async def ws(websocket: WebSocket, job_id: str):
     loop = asyncio.get_event_loop()
     q: "asyncio.Queue[dict]" = asyncio.Queue()
 
+    # Reconnect support: the client sends how many events it already applied
+    # (?since=N) so a socket dropped mid-render by a flaky IP catches back up
+    # on exactly what it missed instead of replaying (and duplicating) the
+    # whole log. The render itself is unaffected by the socket dropping — it
+    # runs on the worker thread regardless of whether anyone is listening.
+    try:
+        since = int(websocket.query_params.get("since") or 0)
+    except ValueError:
+        since = 0
+
     def _cb(event: dict):
         loop.call_soon_threadsafe(q.put_nowait, event)
 
-    jobs.register_listener(job_id, _cb)
+    jobs.register_listener(job_id, _cb, since=since)
     try:
         while True:
             event = await q.get()
@@ -398,6 +408,18 @@ async def ws(websocket: WebSocket, job_id: str):
         pass
     finally:
         jobs.unregister_listener(job_id, _cb)
+
+
+@app.get("/api/job/{job_id}")
+def job_status(job_id: str, request: Request):
+    """Plain-HTTP polling fallback for the progress WS. A network blip that
+    stalls a WS upgrade often still lets a normal GET through, so the frontend
+    polls this while its socket is down — enough to recover the download link
+    (or the error) even if the live reconnect never manages to land."""
+    job = jobs.get_job(job_id)
+    if not job or not _owns(job, _sid(request)):
+        return JSONResponse({"error": "not found"}, status_code=404)
+    return jobs.snapshot(job)
 
 
 # ---------------------------------------------------------------------------
